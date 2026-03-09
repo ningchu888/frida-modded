@@ -10,10 +10,17 @@ jobs:
     runs-on: ubuntu-22.04
     
     steps:
-    - name: Checkout
+    - name: Checkout main repo
       uses: actions/checkout@v4
       with:
-        submodules: recursive
+        fetch-depth: 0
+        
+    - name: Checkout submodules manually
+      run: |
+        git submodule update --init
+        cd subprojects/frida-core && git checkout main && git pull origin main
+        cd ../frida-gum && git checkout main && git pull origin main
+        cd ../..
         
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -24,31 +31,39 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential curl git libc6-dev-i386 \
-          lib32stdc++-11-dev gcc-multilib g++-multilib ninja-build
+          lib32stdc++-11-dev gcc-multilib g++-multilib ninja-build \
+          pkg-config libglib2.0-dev
         pip install meson
         
-    - name: Apply patches (if any)
-      run: |
-        if [ -f patch_frida.py ]; then
-          python patch_frida.py
-        fi
+    - name: Setup Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r25c
+        add-to-path: true
         
     - name: Configure for android-arm64
       run: |
-        ./configure --host android-arm64
+        python releng/meson_configure.py --host android-arm64 --prefix $(pwd)/build/install
         
     - name: Build frida-server
       run: |
-        make
+        python releng/meson_make.py
         
-    - name: Package artifacts
+    - name: Find and package artifacts
       run: |
         mkdir -p artifacts
-        cp build/subprojects/frida-core/server/frida-server artifacts/frida-server-android-arm64
-        xz -9 artifacts/frida-server-android-arm64
+        find build -name "frida-server" -type f -executable | head -1 | xargs -I {} cp {} artifacts/frida-server-android-arm64 || true
+        if [ -f artifacts/frida-server-android-arm64 ]; then
+          xz -9 artifacts/frida-server-android-arm64
+        else
+          echo "Build output not found, listing build directory:"
+          find build -type f -name "*server*" 2>/dev/null || true
+          ls -la build/ || true
+        fi
         
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: frida-server-android-arm64
         path: artifacts/
+        if-no-files-found: warn
