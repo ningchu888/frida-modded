@@ -47,17 +47,23 @@ jobs:
       env:
         FRIDA_HOST: android-arm64
         
+    - name: Build frida-server for android-arm (32-bit)
+      run: |
+        make server-android-arm
+      env:
+        FRIDA_HOST: android-arm
+        
     - name: Find and package artifacts
       run: |
         mkdir -p artifacts
-        find build -name "frida-server" -type f | head -1 | xargs -I {} cp {} artifacts/frida-server-modded-arm64 || true
-        if [ -f artifacts/frida-server-modded-arm64 ]; then
-          xz -9 artifacts/frida-server-modded-arm64
-        else
-          echo "Build output not found, listing build directory:"
-          find build -type f -name "*server*" 2>/dev/null || true
-          ls -laR build/ 2>/dev/null | head -100 || true
-        fi
+        # Copy arm64 version
+        find build -path "*android-arm64*" -name "frida-server" -type f | head -1 | xargs -I {} cp {} artifacts/frida-server-modded-arm64 || true
+        # Copy arm (32-bit) version
+        find build -path "*android-arm/*" -name "frida-server" -type f | head -1 | xargs -I {} cp {} artifacts/frida-server-modded-arm || true
+        # Compress
+        [ -f artifacts/frida-server-modded-arm64 ] && xz -9 artifacts/frida-server-modded-arm64 || true
+        [ -f artifacts/frida-server-modded-arm ] && xz -9 artifacts/frida-server-modded-arm || true
+        ls -la artifacts/ || true
         
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
