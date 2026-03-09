@@ -20,26 +20,35 @@ import string
 FRIDA_ROOT = r"E:\frida-16.4.7"
 RANDOM_SUFFIX = ''.join(random.choices(string.ascii_lowercase, k=4))
 
-# 替换规则
+# 替换规则 - 完整版
 REPLACEMENTS = {
-    # 端口特征
+    # ===== 端口特征 =====
     "27042": "39042",
     "27052": "39052",
     
-    # 目录名特征
-    "re.frida.server": f"re.xmsf.helper",
+    # ===== 目录名特征 =====
+    "re.frida.server": "re.xmsf.helper",
     
-    # 线程名特征
-    "frida-server-main-loop": f"pool-main-loop",
-    "gum-js-loop": f"v8-loop",
-    "frida-agent-container": f"jni-container",
-    "frida-agent-emulated": f"dex-emulated",
+    # ===== 线程名特征 =====
+    "frida-server-main-loop": "pool-main-loop",
+    "gum-js-loop": "v8-loop",
+    "frida-agent-container": "jni-container",
+    "frida-agent-emulated": "dex-emulated",
     
-    # SO名称特征 (小心修改，可能影响加载)
-    # "frida-agent": f"libhelper",
+    # ===== D-Bus/RPC 特征 =====
+    "frida:rpc": "xmsf:rpc",
     
-    # Gadget特征
-    "FridaGadget": f"NativeHelper",
+    # ===== SO名称特征 =====
+    "frida-agent-arm.so": "libxmsf-arm.so",
+    "frida-agent-arm64.so": "libxmsf-arm64.so",
+    "frida-agent-32.so": "libxmsf-32.so",
+    "frida-agent-64.so": "libxmsf-64.so",
+    'frida-agent-<arch>.so': 'libxmsf-<arch>.so',
+    "frida-agent.dll": "libxmsf.dll",
+    
+    # ===== Gadget特征 =====
+    "FridaGadget": "NativeHelper",
+    "frida-gadget": "native-helper",
 }
 
 # 需要处理的文件扩展名
