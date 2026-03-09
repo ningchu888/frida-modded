@@ -41,29 +41,27 @@ jobs:
         ndk-version: r25c
         add-to-path: true
         
-    - name: Configure for android-arm64
+    - name: Build frida-server for android-arm64
       run: |
-        python releng/meson_configure.py --host android-arm64 --prefix $(pwd)/build/install
-        
-    - name: Build frida-server
-      run: |
-        python releng/meson_make.py
+        make server-android-arm64
+      env:
+        FRIDA_HOST: android-arm64
         
     - name: Find and package artifacts
       run: |
         mkdir -p artifacts
-        find build -name "frida-server" -type f -executable | head -1 | xargs -I {} cp {} artifacts/frida-server-android-arm64 || true
-        if [ -f artifacts/frida-server-android-arm64 ]; then
-          xz -9 artifacts/frida-server-android-arm64
+        find build -name "frida-server" -type f | head -1 | xargs -I {} cp {} artifacts/frida-server-modded-arm64 || true
+        if [ -f artifacts/frida-server-modded-arm64 ]; then
+          xz -9 artifacts/frida-server-modded-arm64
         else
           echo "Build output not found, listing build directory:"
           find build -type f -name "*server*" 2>/dev/null || true
-          ls -la build/ || true
+          ls -laR build/ 2>/dev/null | head -100 || true
         fi
         
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: frida-server-android-arm64
+        name: frida-server-modded-arm64
         path: artifacts/
         if-no-files-found: warn
